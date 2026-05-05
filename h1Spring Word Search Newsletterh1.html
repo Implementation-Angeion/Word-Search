@@ -1,79 +1,32 @@
-<div id="wordSearchBox"></div>
-
-<style>
-  #wordSearchBox {
-    max-width: 520px;
-    border: 2px solid #222;
-    border-radius: 12px;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-    background: #fff;
-  }
-
-  .ws-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 40px);
-    gap: 6px;
-    margin: 16px 0;
-  }
-
-  .ws-cell {
-    width: 40px;
-    height: 40px;
-    border: 1px solid #bbb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-weight: bold;
-    user-select: none;
-  }
-
-  .ws-cell.selected {
-    background: #ffe08a;
-  }
-
-  .ws-cell.found {
-    background: #9be7a7;
-  }
-
-  .ws-word.found {
-    text-decoration: line-through;
-    color: green;
-  }
-</style>
-
-<script>
-const puzzle = {
-  title: "Newsletter Word Search",
-  words: ["SPRING", "RAIN", "FLOWER"],
-  grid: [
-    ["S","P","R","I","N","G","A","B"],
-    ["X","F","L","O","W","E","R","C"],
-    ["R","A","I","N","D","E","F","G"],
-    ["H","I","J","K","L","M","N","O"],
-    ["P","Q","R","S","T","U","V","W"]
-  ]
-};
-
-const box = document.getElementById("wordSearchBox");
-
-box.innerHTML = `
-  <h2>${puzzle.title}</h2>
-  <p>Click letters to find the hidden words.</p>
-  <div><strong>Words:</strong> 
-    ${puzzle.words.map(w => `<span class="ws-word" data-word="${w}">${w}</span>`).join(", ")}
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    .box { padding: 20px; border: 2px solid #222; border-radius: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(8, 36px); gap: 5px; }
+    .cell { border: 1px solid #aaa; padding: 10px; text-align: center; cursor: pointer; }
+    .cell.selected { background: #ffe08a; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Word Search</h2>
+    <p>Find: SPRING, RAIN, FLOWER</p>
+    <div class="grid" id="grid"></div>
   </div>
-  <div class="ws-grid"></div>
-`;
 
-const grid = box.querySelector(".ws-grid");
+  <script>
+    const letters = "SPRINGABXFLOWERCRAINDEFGHIJKLMNO".split("");
+    const grid = document.getElementById("grid");
 
-puzzle.grid.flat().forEach(letter => {
-  const cell = document.createElement("div");
-  cell.className = "ws-cell";
-  cell.textContent = letter;
-  cell.onclick = () => cell.classList.toggle("selected");
-  grid.appendChild(cell);
-});
-</script>
+    letters.forEach(letter => {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.textContent = letter;
+      cell.onclick = () => cell.classList.toggle("selected");
+      grid.appendChild(cell);
+    });
+  </script>
+</body>
+</html>
