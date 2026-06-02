@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Light Bulb Flappy Game</title>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #222;
+      font-family: system-ui, sans-serif;
+    }
+
+    canvas {
+      background: linear-gradient(#f8fbff, #e6f3ff);
+      border: 4px solid white;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="game" width="400" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    let bird = {
+      x: 80,
+      y: 250,
+      size: 18,
+      velocity: 0
+    };
+
+    let gravity = 0.45;
+    let lift = -8;
+    let pipes = [];
+    let score = 0;
+    let gameOver = false;
+
+    function flap() {
+      if (gameOver) {
+        resetGame();
+      } else {
+        bird.velocity = lift;
+      }
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.code === "Space") flap();
+    });
+
+    canvas.addEventListener("click", flap);
+
+    function resetGame() {
+      bird.y = 250;
+      bird.velocity = 0;
+      pipes = [];
+      score = 0;
+      gameOver = false;
+    }
+
+    function createPipe() {
+      const gap = 150;
+      const topHeight = Math.random() * 250 + 50;
+
+      pipes.push({
+        x: canvas.width,
+        topHeight,
+        gap,
+        width: 60,
+        scored: false
+      });
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      bird.velocity += gravity;
+      bird.y += bird.velocity;
+
+      if (pipes.length === 0 || pipes[pipes.length - 1].x < 220) {
+        createPipe();
+      }
+
+      pipes.forEach(pipe => {
+        pipe.x -= 2;
+
+        const birdLeft = bird.x - bird.size;
+        const birdRight = bird.x + bird.size;
+        const birdTop = bird.y - bird.size;
+        const birdBottom = bird.y + bird.size + 14;
+
+        const pipeLeft = pipe.x;
+        const pipeRight = pipe.x + pipe.width;
+        const topPipeBottom = pipe.topHeight;
+        const bottomPipeTop = pipe.topHeight + pipe.gap;
+
+        const hitsPipe =
+          birdRight > pipeLeft &&
+          birdLeft < pipeRight &&
+          (birdTop < topPipeBottom || birdBottom > bottomPipeTop);
+
+        if (hitsPipe) {
+          gameOver = true;
+        }
+
+        if (!pipe.scored && pipe.x + pipe.width < bird.x) {
+          score++;
+          pipe.scored = true;
+        }
+      });
+
+      pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+
+      if (bird.y + bird.size + 14 > canvas.height || bird.y - bird.size < 0) {
+        gameOver = true;
+      }
+    }
+
+    function drawBird() {
+      // Blue glow
+      ctx.fillStyle = "rgba(0, 153, 255, 0.18)";
+      ctx.beginPath();
+      ctx.arc(bird.x, bird.y - 4, bird.size + 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bulb glass
+      ctx.fillStyle = "#d1d5db";
+      ctx.beginPath();
+      ctx.arc(bird.x, bird.y - 4, bird.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bulb outline
+      ctx.strokeStyle = "#0099ff";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(bird.x, bird.y - 4, bird.size, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Glass highlight
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.beginPath();
+      ctx.arc(bird.x - 7, bird.y - 11, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Filament
+      ctx.strokeStyle = "#0099ff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(bird.x - 6, bird.y - 5);
+      ctx.lineTo(bird.x - 2, bird.y + 3);
+      ctx.lineTo(bird.x + 2, bird.y + 3);
+      ctx.lineTo(bird.x + 6, bird.y - 5);
+      ctx.stroke();
+
+      // Bulb base
+      ctx.fillStyle = "#0099ff";
+      ctx.fillRect(bird.x - 9, bird.y + 8, 18, 14);
+
+      // Base bottom
+      ctx.fillStyle = "#0077cc";
+      ctx.fillRect(bird.x - 7, bird.y + 22, 14, 5);
+
+      // Screw ridges
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(bird.x - 9, bird.y + 11 + i * 4);
+        ctx.lineTo(bird.x + 9, bird.y + 11 + i * 4);
+        ctx.stroke();
+      }
+    }
+
+    function drawPipes() {
+      pipes.forEach(pipe => {
+        // Main blue towers
+        ctx.fillStyle = "#0099ff";
+
+        ctx.fillRect(
+          pipe.x,
+          0,
+          pipe.width,
+          pipe.topHeight
+        );
+
+        ctx.fillRect(
+          pipe.x,
+          pipe.topHeight + pipe.gap,
+          pipe.width,
+          canvas.height
+        );
+
+        // Darker tower caps
+        ctx.fillStyle = "#0077cc";
+
+        ctx.fillRect(
+          pipe.x - 5,
+          pipe.topHeight - 18,
+          pipe.width + 10,
+          18
+        );
+
+        ctx.fillRect(
+          pipe.x - 5,
+          pipe.topHeight + pipe.gap,
+          pipe.width + 10,
+          18
+        );
+
+        // Light side highlight
+        ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+
+        ctx.fillRect(
+          pipe.x + 8,
+          0,
+          8,
+          pipe.topHeight
+        );
+
+        ctx.fillRect(
+          pipe.x + 8,
+          pipe.topHeight + pipe.gap,
+          8,
+          canvas.height
+        );
+      });
+    }
+
+    function drawText() {
+      ctx.fillStyle = "#0099ff";
+      ctx.font = "32px system-ui";
+      ctx.fillText(score, 20, 45);
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "white";
+        ctx.font = "34px system-ui";
+        ctx.fillText("Game Over", 110, 270);
+
+        ctx.font = "18px system-ui";
+        ctx.fillText("Click or press Space to restart", 85, 310);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPipes();
+      drawBird();
+      drawText();
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
