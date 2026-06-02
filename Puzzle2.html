@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Newsletter Photo Puzzle</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      display: grid;
+      place-items: center;
+    }
+
+    .game {
+      max-width: 900px;
+      padding: 30px;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    p {
+      opacity: 0.85;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    button {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 999px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #0099ff;
+      color: white;
+      margin: 6px;
+      box-shadow: 0 8px 20px rgba(0, 153, 255, 0.25);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .layout {
+      display: flex;
+      gap: 28px;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .preview-box {
+      width: 180px;
+      background: rgba(255,255,255,.1);
+      padding: 14px;
+      border-radius: 18px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.25);
+    }
+
+    .preview-box img {
+      width: 100%;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .preview-box small {
+      display: block;
+      margin-top: 10px;
+      opacity: .8;
+    }
+
+    #puzzle {
+      width: 400px;
+      height: 400px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 6px solid white;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45);
+      background: white;
+    }
+
+    .tile {
+      width: 100px;
+      height: 100px;
+      background-size: 400px 400px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,.45);
+      box-sizing: border-box;
+      transition: transform .12s ease, outline .12s ease, filter .12s ease;
+    }
+
+    .tile:hover {
+      filter: brightness(1.08);
+      transform: scale(1.03);
+      z-index: 2;
+    }
+
+    .selected {
+      outline: 5px solid #facc15;
+      outline-offset: -5px;
+      z-index: 3;
+      filter: brightness(1.15);
+    }
+
+    .stats {
+      margin-top: 18px;
+      font-weight: 800;
+    }
+
+    .success {
+      margin-top: 18px;
+      font-size: 22px;
+      font-weight: 900;
+      color: #86efac;
+      min-height: 28px;
+    }
+
+    @media (max-width: 520px) {
+      #puzzle {
+        width: 320px;
+        height: 320px;
+      }
+
+      .tile {
+        width: 80px;
+        height: 80px;
+        background-size: 320px 320px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game">
+    <h1>Photo Puzzle Challenge</h1>
+    <p>Click two tiles to swap them. Rebuild the image to win.</p>
+
+    <div class="controls">
+      <button onclick="shuffleTiles()">Shuffle Puzzle</button>
+      <button onclick="solvePuzzle()">Show Solution</button>
+    </div>
+
+    <div class="layout">
+      <div>
+        <div id="puzzle"></div>
+
+        <div class="stats">
+          Moves: <span id="moves">0</span>
+        </div>
+
+        <div id="success" class="success"></div>
+      </div>
+
+      <div class="preview-box">
+        <img id="preview" alt="Puzzle preview">
+        <small>Preview Image</small>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const imageUrl = "https://www.angeiongroup.com/hs-fs/hubfs/lightbulb%20(1)-1.png?width=982&amp;height=1200&amp;name=lightbulb%20(1)-1.png";
+
+    const puzzle = document.getElementById("puzzle");
+    const preview = document.getElementById("preview");
+    const movesText = document.getElementById("moves");
+    const success = document.getElementById("success");
+
+    const size = 4;
+    const totalTiles = size * size;
+
+    let tiles = [];
+    let selectedTile = null;
+    let moves = 0;
+
+    preview.src = imageUrl;
+
+    createPuzzle();
+    shuffleTiles();
+
+    function createPuzzle() {
+      tiles = [];
+
+      for (let i = 0; i < totalTiles; i++) {
+        tiles.push(i);
+      }
+
+      drawTiles();
+    }
+
+    function drawTiles() {
+      puzzle.innerHTML = "";
+
+      tiles.forEach((tileIndex, currentPosition) => {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+
+        const originalX = tileIndex % size;
+        const originalY = Math.floor(tileIndex / size);
+
+        tile.style.backgroundImage = `url("${imageUrl}")`;
+        tile.style.backgroundPosition = `-${originalX * 100}px -${originalY * 100}px`;
+
+        if (selectedTile === currentPosition) {
+          tile.classList.add("selected");
+        }
+
+        tile.onclick = () => selectTile(currentPosition);
+
+        puzzle.appendChild(tile);
+      });
+    }
+
+    function selectTile(position) {
+      success.textContent = "";
+
+      if (selectedTile === null) {
+        selectedTile = position;
+        drawTiles();
+        return;
+      }
+
+      if (selectedTile === position) {
+        selectedTile = null;
+        drawTiles();
+        return;
+      }
+
+      [tiles[selectedTile], tiles[position]] =
+        [tiles[position], tiles[selectedTile]];
+
+      selectedTile = null;
+      moves++;
+      movesText.textContent = moves;
+
+      drawTiles();
+
+      if (isSolved()) {
+        success.textContent = "🎉 Puzzle solved!";
+      }
+    }
+
+    function shuffleTiles() {
+      selectedTile = null;
+      success.textContent = "";
+      moves = 0;
+      movesText.textContent = moves;
+
+      do {
+        for (let i = tiles.length - 1; i > 0; i--) {
+          const randomIndex = Math.floor(Math.random() * (i + 1));
+          [tiles[i], tiles[randomIndex]] = [tiles[randomIndex], tiles[i]];
+        }
+      } while (isSolved());
+
+      drawTiles();
+    }
+
+    function solvePuzzle() {
+      selectedTile = null;
+      tiles = [];
+
+      for (let i = 0; i < totalTiles; i++) {
+        tiles.push(i);
+      }
+
+      drawTiles();
+      success.textContent = "Solution shown!";
+    }
+
+    function isSolved() {
+      return tiles.every((tile, index) => tile === index);
+    }
+  </script>
+</body>
+</html>
