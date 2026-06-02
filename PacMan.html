@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body{
+  margin:0;
+  background:#0f172a;
+  display:grid;
+  place-items:center;
+  height:100vh;
+}
+
+canvas{
+  border:4px solid white;
+  background:#111827;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const tileSize = 40;
+
+let score = 0;
+
+const player = {
+  x: 1,
+  y: 1
+};
+
+const enemy = {
+  x: 13,
+  y: 13
+};
+
+const maze = [
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,1,1,0,1,0,1,0,1,1,1,0,1],
+[1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
+[1,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
+[1,0,0,0,1,1,1,0,1,1,1,0,0,0,1],
+[1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
+[1,0,1,1,1,0,0,0,0,0,1,1,1,0,1],
+[1,0,0,0,1,0,1,1,1,0,1,0,0,0,1],
+[1,1,1,0,1,0,0,0,0,0,1,0,1,1,1],
+[1,0,0,0,0,0,1,0,1,0,0,0,0,0,1],
+[1,0,1,1,1,0,1,0,1,0,1,1,1,0,1],
+[1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+[1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+const documents = [];
+
+for(let y=0;y<maze.length;y++){
+  for(let x=0;x<maze[y].length;x++){
+    if(maze[y][x]===0){
+      documents.push({x,y});
+    }
+  }
+}
+
+function drawFolder(x,y){
+
+  const px = x*tileSize;
+  const py = y*tileSize;
+
+  ctx.fillStyle="#0099ff";
+
+  ctx.fillRect(
+    px+4,
+    py+12,
+    32,
+    24
+  );
+
+  ctx.fillRect(
+    px+8,
+    py+6,
+    14,
+    10
+  );
+}
+
+function drawEnemy(x,y){
+
+  const px = x*tileSize+20;
+  const py = y*tileSize+20;
+
+  ctx.fillStyle="#ef4444";
+
+  ctx.beginPath();
+  ctx.arc(px,py,14,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="white";
+
+  ctx.beginPath();
+  ctx.arc(px-5,py-4,3,0,Math.PI*2);
+  ctx.arc(px+5,py-4,3,0,Math.PI*2);
+  ctx.fill();
+}
+
+function draw(){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let y=0;y<maze.length;y++){
+    for(let x=0;x<maze[y].length;x++){
+
+      if(maze[y][x]===1){
+
+        ctx.fillStyle="#1d4ed8";
+
+        ctx.fillRect(
+          x*tileSize,
+          y*tileSize,
+          tileSize,
+          tileSize
+        );
+      }
+    }
+  }
+
+  documents.forEach(doc=>{
+
+    ctx.fillStyle="white";
+
+    ctx.fillRect(
+      doc.x*tileSize+16,
+      doc.y*tileSize+16,
+      8,
+      8
+    );
+  });
+
+  drawFolder(player.x,player.y);
+
+  drawEnemy(enemy.x,enemy.y);
+
+  ctx.fillStyle="white";
+  ctx.font="24px Arial";
+  ctx.fillText(`Files: ${score}`,10,30);
+}
+
+function movePlayer(dx,dy){
+
+  const nx = player.x+dx;
+  const ny = player.y+dy;
+
+  if(maze[ny][nx]===1) return;
+
+  player.x = nx;
+  player.y = ny;
+
+  const docIndex = documents.findIndex(
+    d=>d.x===player.x && d.y===player.y
+  );
+
+  if(docIndex>-1){
+    documents.splice(docIndex,1);
+    score++;
+  }
+
+  if(
+    player.x===enemy.x &&
+    player.y===enemy.y
+  ){
+    alert("Missing Document Got You!");
+    location.reload();
+  }
+
+  if(documents.length===0){
+    alert("All Files Collected!");
+    location.reload();
+  }
+}
+
+document.addEventListener("keydown",e=>{
+
+  if(e.key==="ArrowUp") movePlayer(0,-1);
+  if(e.key==="ArrowDown") movePlayer(0,1);
+  if(e.key==="ArrowLeft") movePlayer(-1,0);
+  if(e.key==="ArrowRight") movePlayer(1,0);
+});
+
+function moveEnemy() {
+  const dirs = [
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 }
+  ];
+
+  let possibleMoves = dirs
+    .map(dir => ({
+      x: enemy.x + dir.dx,
+      y: enemy.y + dir.dy
+    }))
+    .filter(move => maze[move.y][move.x] === 0);
+
+  if (possibleMoves.length === 0) return;
+
+  possibleMoves.sort((a, b) => {
+    const distanceA =
+      Math.abs(a.x - player.x) + Math.abs(a.y - player.y);
+
+    const distanceB =
+      Math.abs(b.x - player.x) + Math.abs(b.y - player.y);
+
+    return distanceA - distanceB;
+  });
+
+  enemy.x = possibleMoves[0].x;
+  enemy.y = possibleMoves[0].y;
+
+  if (player.x === enemy.x && player.y === enemy.y) {
+    alert("Missing Document Got You!");
+    location.reload();
+  }
+}
+
+setInterval(moveEnemy,500);
+
+function gameLoop(){
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
