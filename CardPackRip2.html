@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Angeion Card Pack</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #101820;
+      color: white;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+
+    button {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      margin: 8px;
+      background: #0099ff;
+      color: white;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .pack {
+      width: 240px;
+      height: 340px;
+      margin: 24px auto;
+      background: linear-gradient(135deg, #003f7f, #0099ff);
+      border-radius: 18px;
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      letter-spacing: 2px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.45);
+      position: relative;
+      overflow: hidden;
+      transition: transform .4s ease, opacity .4s ease;
+    }
+
+    .tear {
+      position: absolute;
+      top: 28px;
+      width: 100%;
+      border-top: 3px dashed rgba(255,255,255,.8);
+      padding-top: 12px;
+    }
+
+    .pack.ripped {
+      transform: rotate(-8deg) scale(.9) translateY(-30px);
+      opacity: 0;
+    }
+
+    .cards,
+    .collection-grid {
+      margin-top: 28px;
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      width: 165px;
+      height: 260px;
+      border-radius: 16px;
+      background: white;
+      color: #111;
+      box-shadow: 0 14px 28px rgba(0,0,0,.4);
+      padding: 14px;
+      transform: translateY(40px) scale(.8);
+      opacity: 0;
+      animation: reveal .45s ease forwards;
+      border: 4px solid #ddd;
+    }
+
+    .collection-card {
+      transform: none;
+      opacity: 1;
+      animation: none;
+    }
+
+    .card img {
+      width: 100%;
+      height: 110px;
+      object-fit: contain;
+      border-radius: 10px;
+      background: #f3f7fb;
+    }
+
+    .card h3 {
+      margin: 12px 0 4px;
+      font-size: 16px;
+    }
+
+    .rarity {
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .odds {
+      font-size: 12px;
+      opacity: .75;
+      margin-top: 4px;
+    }
+
+    .Common {
+      border-color: #9ca3af;
+    }
+
+    .Uncommon {
+      border-color: #22c55e;
+    }
+
+    .Rare {
+      border-color: #0099ff;
+    }
+
+    .Epic {
+      border-color: #7c3aed;
+    }
+
+    .Legendary {
+      border-color: #f59e0b;
+      box-shadow: 0 0 30px rgba(245,158,11,.65);
+    }
+
+    .locked {
+      background: #1f2937;
+      color: white;
+      border-color: #4b5563;
+    }
+
+    .locked img {
+      filter: brightness(0);
+      opacity: .35;
+    }
+
+    .progress {
+      margin: 20px auto;
+      max-width: 500px;
+      background: rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .progress-bar {
+      height: 18px;
+      background: rgba(255,255,255,.2);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #0099ff;
+      transition: width .3s ease;
+    }
+
+    @keyframes reveal {
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>Angeion Card Pack</h1>
+    <p>Rip packs, collect cards, and try to find the rare ones.</p>
+
+    <button onclick="openPack()">Rip Pack</button>
+    <button onclick="showCollection()">View Collection Book</button>
+    <button onclick="resetCollection()">Reset Collection</button>
+
+    <div id="pack" class="pack">
+      <div class="tear">✦ ✦ ✦</div>
+      <span>ANGEION CARD PACK</span>
+    </div>
+
+    <h2>Latest Pulls</h2>
+    <div id="cards" class="cards"></div>
+
+    <div id="collectionBook"></div>
+  </div>
+
+  <script>
+    const cardImages = {
+      lightbulb: "https://www.angeiongroup.com/hs-fs/hubfs/lightbulb%20%281%29-1.png?height=1200&name=lightbulb+%281%29-1.png&width=982",
+      badge: "https://www.angeiongroup.com/hs-fs/hubfs/Angeion_Group_2025/logos/home/logo-certified.png?height=215&name=logo-certified.png&width=150"
+    };
+
+    const customCards = [
+      {
+        name: "Notice Navigator",
+        rarity: "Common",
+        chance: 22,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "Claims Coordinator",
+        rarity: "Common",
+        chance: 20,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "Case Manager",
+        rarity: "Common",
+        chance: 18,
+        image: cardImages.badge
+      },
+      {
+        name: "Data Defender",
+        rarity: "Uncommon",
+        chance: 12,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "Settlement Strategist",
+        rarity: "Uncommon",
+        chance: 10,
+        image: cardImages.badge
+      },
+      {
+        name: "Deadline Dodger",
+        rarity: "Uncommon",
+        chance: 8,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "Fraud Prevention Shield",
+        rarity: "Rare",
+        chance: 5,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "Notice Expert",
+        rarity: "Rare",
+        chance: 4,
+        image: cardImages.badge
+      },
+      {
+        name: "Excel Wizard",
+        rarity: "Rare",
+        chance: 4,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "EvidenceEngine Spark",
+        rarity: "Epic",
+        chance: 2,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "Mega Summit Pass",
+        rarity: "Epic",
+        chance: 2,
+        image: cardImages.badge
+      },
+      {
+        name: "Bonusly Champion",
+        rarity: "Legendary",
+        chance: 1,
+        image: cardImages.badge
+      },
+      {
+        name: "Final Approval Hero",
+        rarity: "Legendary",
+        chance: 1,
+        image: cardImages.lightbulb
+      },
+      {
+        name: "Angeion All-Star",
+        rarity: "Legendary",
+        chance: 1,
+        image: cardImages.lightbulb
+      }
+    ];
+
+    function openPack() {
+      const pack = document.getElementById("pack");
+      const cardsContainer = document.getElementById("cards");
+
+      cardsContainer.innerHTML = "";
+      pack.classList.add("ripped");
+
+      setTimeout(() => {
+        const drawnCards = drawWeightedCards(customCards, 5);
+
+        drawnCards.forEach((card, index) => {
+          saveCard(card.name);
+
+          const cardEl = createCardElement(card, false);
+          cardEl.style.animationDelay = `${index * 0.15}s`;
+          cardsContainer.appendChild(cardEl);
+        });
+
+        updateCollectionProgress();
+
+        setTimeout(() => {
+          pack.classList.remove("ripped");
+        }, 900);
+      }, 450);
+    }
+
+    function drawWeightedCards(deck, count) {
+      const selectedCards = [];
+
+      for (let i = 0; i < count; i++) {
+        selectedCards.push(drawOneWeightedCard(deck));
+      }
+
+      return selectedCards;
+    }
+
+    function drawOneWeightedCard(deck) {
+      const totalChance = deck.reduce((sum, card) => sum + card.chance, 0);
+      let random = Math.random() * totalChance;
+
+      for (const card of deck) {
+        random -= card.chance;
+
+        if (random <= 0) {
+          return card;
+        }
+      }
+
+      return deck[deck.length - 1];
+    }
+
+    function saveCard(cardName) {
+      const collection = getCollection();
+
+      if (!collection.includes(cardName)) {
+        collection.push(cardName);
+        localStorage.setItem("angeionCardCollection", JSON.stringify(collection));
+      }
+    }
+
+    function getCollection() {
+      return JSON.parse(localStorage.getItem("angeionCardCollection")) || [];
+    }
+
+    function showCollection() {
+      const collection = getCollection();
+      const collectionBook = document.getElementById("collectionBook");
+
+      let ownedCount = collection.length;
+      let totalCount = customCards.length;
+      let percent = Math.round((ownedCount / totalCount) * 100);
+
+      let html = `
+        <div class="progress">
+          <h2>Collection Book</h2>
+          <p>${ownedCount} / ${totalCount} cards collected</p>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${percent}%"></div>
+          </div>
+          <p>${percent}% complete</p>
+        </div>
+
+        <div class="collection-grid">
+      `;
+
+      customCards.forEach(card => {
+        const owned = collection.includes(card.name);
+
+        html += createCollectionCardHTML(card, owned);
+      });
+
+      html += `</div>`;
+
+      collectionBook.innerHTML = html;
+    }
+
+    function updateCollectionProgress() {
+      if (document.getElementById("collectionBook").innerHTML.trim() !== "") {
+        showCollection();
+      }
+    }
+
+    function createCardElement(card, collectionCard) {
+      const cardEl = document.createElement("div");
+      cardEl.className = `card ${card.rarity} ${collectionCard ? "collection-card" : ""}`;
+
+      cardEl.innerHTML = `
+        <img src="${card.image}" alt="${card.name}">
+        <h3>${card.name}</h3>
+        <div class="rarity">${card.rarity}</div>
+        <div class="odds">${card.chance}% pull weight</div>
+      `;
+
+      return cardEl;
+    }
+
+    function createCollectionCardHTML(card, owned) {
+      if (!owned) {
+        return `
+          <div class="card collection-card locked">
+            <img src="${card.image}" alt="Locked card">
+            <h3>Unknown Card</h3>
+            <div class="rarity">${card.rarity}</div>
+            <div class="odds">Not collected yet</div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="card collection-card ${card.rarity}">
+          <img src="${card.image}" alt="${card.name}">
+          <h3>${card.name}</h3>
+          <div class="rarity">${card.rarity}</div>
+          <div class="odds">${card.chance}% pull weight</div>
+        </div>
+      `;
+    }
+
+    function resetCollection() {
+      const confirmReset = confirm("Are you sure you want to reset your collection?");
+
+      if (confirmReset) {
+        localStorage.removeItem("angeionCardCollection");
+        document.getElementById("cards").innerHTML = "";
+        showCollection();
+      }
+    }
+
+    showCollection();
+  </script>
+</body>
+</html>
