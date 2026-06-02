@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scratch-Off Prize</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #111827;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .game {
+      text-align: center;
+    }
+
+    .scratch-card {
+      width: 350px;
+      height: 200px;
+      position: relative;
+      margin: 24px auto;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+    }
+
+    .result {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: white;
+      color: #111;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 20px;
+      text-align: center;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+    }
+
+    #message {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game">
+    <h1>Scratch to Reveal</h1>
+
+    <div class="scratch-card">
+      <div id="result" class="result">Scratch here!</div>
+      <canvas id="scratch"></canvas>
+    </div>
+
+    <p id="message"></p>
+  </div>
+
+  <script>
+    const FLOW_URL = "https://defaulta01e54b014dd40de92b989f79c1344.8c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/dd59914b77704763b1bf45e884b27b3a/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=MkJZz0BfmIXMwfIFKEtcJ7etbWiWQYh_unWZ4shUZQ8";
+
+    const canvas = document.getElementById("scratch");
+    const ctx = canvas.getContext("2d");
+    const result = document.getElementById("result");
+    const message = document.getElementById("message");
+
+    let isDrawing = false;
+    let alreadyChecked = false;
+
+    canvas.width = 350;
+    canvas.height = 200;
+
+    function setupScratchLayer() {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 28px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("SCRATCH OFF", canvas.width / 2, 105);
+    }
+
+    setupScratchLayer();
+
+    function getPosition(e) {
+      const rect = canvas.getBoundingClientRect();
+
+      if (e.touches) {
+        return {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top
+        };
+      }
+
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
+
+    function scratch(x, y) {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(x, y, 24, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (!alreadyChecked && scratchedEnough()) {
+        alreadyChecked = true;
+        checkPrize();
+      }
+    }
+
+    function scratchedEnough() {
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let cleared = 0;
+
+      for (let i = 3; i < pixels.length; i += 4) {
+        if (pixels[i] === 0) cleared++;
+      }
+
+      return cleared / (canvas.width * canvas.height) > 0.35;
+    }
+
+    async function checkPrize() {
+      message.textContent = "Checking prize...";
+
+      try {
+        const response = await fetch(FLOW_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.winner === true) {
+          result.innerHTML = `🎉 You won!<br><small>Code: ${data.code}</small>`;
+          message.textContent = "Congrats! Save this code.";
+        } else {
+          result.innerHTML = "Better luck next time!";
+          message.textContent = "This prize has already been claimed.";
+        }
+      } catch (error) {
+        result.innerHTML = "Error checking prize";
+        message.textContent = "Please try again.";
+      }
+    }
+
+    canvas.addEventListener("mousedown", e => {
+      isDrawing = true;
+      const pos = getPosition(e);
+      scratch(pos.x, pos.y);
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      if (!isDrawing) return;
+      const pos = getPosition(e);
+      scratch(pos.x, pos.y);
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      isDrawing = false;
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+      isDrawing = false;
+    });
+
+    canvas.addEventListener("touchstart", e => {
+      e.preventDefault();
+      const pos = getPosition(e);
+      scratch(pos.x, pos.y);
+    });
+
+    canvas.addEventListener("touchmove", e => {
+      e.preventDefault();
+      const pos = getPosition(e);
+      scratch(pos.x, pos.y);
+    });
+  </script>
+</body>
+</html>
